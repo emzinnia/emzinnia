@@ -1130,57 +1130,41 @@ class StatsCardRenderer:
         """Draw language legend to the right of the bar."""
         row_height = self._s(36)
         visible_languages = languages[:5]
+        dot_size = self._s(10)
+        text_x = x + self._s(20)
         
-        # Top-align with the stats items
-        current_y = y
         for i, (lang, percentage) in enumerate(visible_languages):
             # Use GitHub's official language color
             color = hex_to_rgba(get_language_color(lang, i))
             
-            # Calculate text metrics for proper vertical centering
-            lang_bbox = draw.textbbox((0, 0), lang, font=self.body_font)
-            lang_text_height = lang_bbox[3] - lang_bbox[1]
-            pct_text = f"{percentage}%"
-            pct_bbox = draw.textbbox((0, 0), pct_text, font=self.small_font)
-            pct_text_height = pct_bbox[3] - pct_bbox[1]
+            # Fixed row position (same approach as stats section)
+            item_y = y + i * row_height
             
-            # Use the taller of the two text elements as the reference height
-            text_height = max(lang_text_height, pct_text_height)
-            
-            # Dot size
-            dot_size = self._s(10)
-            
-            # Calculate vertical center of this row
-            row_center_y = current_y + text_height // 2
-            
-            # Draw dot centered vertically
-            dot_y = row_center_y - dot_size // 2
+            # Draw dot aligned with text (offset to match text baseline visually)
+            dot_y = item_y + self._s(5)
             draw.ellipse(
                 [x, dot_y, x + dot_size, dot_y + dot_size],
                 fill=color,
             )
             
-            # Draw language name centered vertically
-            text_x = x + self._s(20)
-            lang_y = row_center_y - lang_text_height // 2
+            # Draw language name at row position
             draw.text(
-                (text_x, lang_y),
+                (text_x, item_y),
                 lang,
                 font=self.body_font,
                 fill=self.text_color
             )
             
-            # Draw percentage centered vertically, to the right of language name
+            # Draw percentage to the right of language name
+            lang_bbox = draw.textbbox((0, 0), lang, font=self.body_font)
             lang_width = lang_bbox[2] - lang_bbox[0]
-            pct_y = row_center_y - pct_text_height // 2
+            pct_text = f"{percentage}%"
             draw.text(
-                (text_x + lang_width + self._s(8), pct_y),
+                (text_x + lang_width + self._s(8), item_y),
                 pct_text,
                 font=self.small_font,
                 fill=self.secondary_color
             )
-            
-            current_y += row_height
 
     def _normalize_language_name(self, name: str) -> str:
         """Normalize a language name for case-insensitive matching."""
