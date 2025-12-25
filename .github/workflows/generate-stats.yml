@@ -17,17 +17,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Set up Python
+        run: uv python install 3.11
 
       - name: Generate stats card
-        run: python src/main.py
+        run: uv run src/main.py
         env:
           GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
 
