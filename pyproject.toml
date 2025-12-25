@@ -1,0 +1,14 @@
+[project]
+name = "emzinnia"
+version = "0.1.0"
+description = "GitHub stats card generator featuring a Pokemon team."
+readme = "INFO.md"
+requires-python = ">=3.11"
+dependencies = [
+  "pillow>=10.0.0",
+  "requests>=2.31.0",
+  "pyyaml>=6.0",
+  "python-dotenv>=1.0.0",
+]
+
+

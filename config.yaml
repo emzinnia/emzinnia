@@ -1,0 +1,43 @@
+github_username: "emzinnia"
+display_name: "EMZINNIA"
+
+pokemon_team:
+  - croagunk
+  - scizor
+  - munchlax
+  - diancie-mega
+  - yanmega
+  - name: poochyena
+    shiny: true
+
+theme:
+  background: "#1a1b27"
+  text: "#c0caf5"
+  accent: "#7aa2f7"
+  secondary: "#565f89"
+  star_color: "#e0af68"
+  commit_color: "#9ece6a"
+  pr_color: "#bb9af7"
+  issue_color: "#f7768e"
+  contribution_color: "#7dcfff"
+  header_box: "#24283b"
+  team_box: "#24283b"
+  language_bar_border: "#ffffff"
+
+excluded_languages:
+  - "CSS"
+  - "Javascript"
+  - "HTML"
+
+languages:
+  scale_bars: false
+  gradient: false
+  border: true
+
+labels:
+  stats: "stats"
+  languages: "languages"
+
+blurb:
+  - "welcome to my github!"
+  - "check out my most popular repos below and click on this image to see the repo for how this image gets generated!"

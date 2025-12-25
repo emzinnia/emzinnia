@@ -1,0 +1,41 @@
+name: Generate Stats Card
+
+on:
+  schedule:
+    # Run daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate stats card
+        run: python src/main.py
+        env:
+          GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_ACCESS_TOKEN }}
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update stats card [skip ci]"
+          file_pattern: output/stats.png
+          commit_user_name: "GitHub Actions Bot"
+          commit_user_email: "actions@github.com"
+
