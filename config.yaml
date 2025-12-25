@@ -34,6 +34,11 @@ languages:
   gradient: false
   border: true
 
+hologram:
+  enabled: false
+  opacity: 0.8
+  apply_to_profile: true
+
 labels:
   stats: "stats"
   languages: "languages"

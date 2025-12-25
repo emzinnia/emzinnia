@@ -62,8 +62,19 @@ class StatsCardRenderer:
     BASE_LANGUAGE_BAR_WIDTH = 11
     BASE_LANGUAGE_BAR_HEIGHT = 201
 
-    def __init__(self, theme: dict[str, str], scale: float = 2.0):
+    def __init__(
+        self,
+        theme: dict[str, str],
+        scale: float = 2.0,
+        hologram_enabled: bool = True,
+        hologram_opacity: float = 0.15,
+        hologram_apply_to_profile: bool = False,
+    ):
         self.theme = theme
+        self.hologram_enabled = hologram_enabled
+        self.hologram_opacity = max(0.0, min(1.0, hologram_opacity))  # Clamp to 0-1
+        self.hologram_apply_to_profile = hologram_apply_to_profile
+        
         # Rendering scale multiplier. 2.0 => 1600x800 output while keeping the same layout.
         # Clamp to a sane minimum to avoid 0-sized assets if misconfigured.
         try:
@@ -102,6 +113,9 @@ class StatsCardRenderer:
         self.language_bar_border_color = hex_to_rgba(
             theme.get("language_bar_border", "#ffffff")
         )
+        
+        # Load hologram pattern for overlay effect (only if enabled)
+        self.hologram_pattern = self._load_hologram_pattern() if self.hologram_enabled else None
 
         # Try to load a nice font, fallback to default
         self.title_font = self._load_font(self._s(28))
@@ -114,6 +128,61 @@ class StatsCardRenderer:
     def _s(self, value: int | float) -> int:
         """Scale a value from base (1x) coordinate space to output pixels."""
         return int(round(float(value) * self.scale))
+
+    def _load_hologram_pattern(self) -> Image.Image | None:
+        """Load the hologram pattern image for overlay effect."""
+        assets_dir = Path(__file__).parent / "assets"
+        hologram_path = assets_dir / "hologram.png"
+        
+        if hologram_path.exists():
+            try:
+                return Image.open(hologram_path).convert("RGBA")
+            except Exception:
+                pass
+        return None
+
+    def _apply_hologram_overlay(self, image: Image.Image) -> None:
+        """Apply tiled hologram pattern as an overlay on the card."""
+        if not self.hologram_enabled or self.hologram_pattern is None:
+            return
+        
+        pattern = self.hologram_pattern
+        card_w, card_h = image.size
+        pattern_w, pattern_h = pattern.size
+        
+        # Create a tiled pattern image that covers the entire card
+        tiled = Image.new("RGBA", (card_w, card_h), (0, 0, 0, 0))
+        
+        for y in range(0, card_h, pattern_h):
+            for x in range(0, card_w, pattern_w):
+                tiled.paste(pattern, (x, y))
+        
+        # Crop to exact card size
+        tiled = tiled.crop((0, 0, card_w, card_h))
+        
+        # Create rounded corner mask matching the card shape
+        mask = Image.new("L", (card_w, card_h), 0)
+        mask_draw = ImageDraw.Draw(mask)
+        mask_draw.rounded_rectangle(
+            [0, 0, card_w, card_h],
+            radius=self.CORNER_RADIUS,
+            fill=255
+        )
+        
+        # Apply the mask to the tiled pattern
+        tiled.putalpha(Image.composite(
+            tiled.getchannel("A"),
+            Image.new("L", (card_w, card_h), 0),
+            mask
+        ))
+        
+        # Apply configured opacity for holographic effect
+        alpha = tiled.getchannel("A")
+        alpha = alpha.point(lambda p: int(p * self.hologram_opacity))
+        tiled.putalpha(alpha)
+        
+        # Composite the hologram overlay onto the image
+        image.alpha_composite(tiled)
 
     def _load_font(self, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
         """Load a font, with fallbacks."""
@@ -315,7 +384,11 @@ class StatsCardRenderer:
             self.bg_color,
         )
 
-        # Draw layout containers
+        # Apply hologram pattern overlay for shimmer effect (only if not applying to profile)
+        if not self.hologram_apply_to_profile:
+            self._apply_hologram_overlay(image)
+
+        # Draw layout containers (on top of hologram so they're opaque)
         self._draw_layout_containers(draw)
 
         # Draw Pokemon team in the header box (top right container)
@@ -326,7 +399,11 @@ class StatsCardRenderer:
 
         # Draw profile image (below greeting, matching mockup position)
         if profile_image is not None:
-            self._draw_profile_image(image, profile_image)
+            self._draw_profile_image(
+                image,
+                profile_image,
+                apply_hologram=self.hologram_apply_to_profile and self.hologram_enabled,
+            )
 
         # Draw speech bubble tail ON TOP of the profile image for proper z-ordering
         self._draw_speech_bubble_tail(draw)
@@ -416,6 +493,7 @@ class StatsCardRenderer:
         self,
         image: Image.Image,
         profile_image: Image.Image,
+        apply_hologram: bool = False,
     ) -> None:
         """Draw the profile image with rounded corners, matching mockup position."""
         # Mockup position: x=122, y=101, size=100x100, corner radius=23
@@ -427,6 +505,10 @@ class StatsCardRenderer:
         # Resize profile image to target size
         profile = profile_image.convert("RGBA")
         profile = profile.resize((size, size), Image.Resampling.LANCZOS)
+
+        # Apply hologram overlay to profile if requested
+        if apply_hologram and self.hologram_pattern is not None:
+            self._apply_hologram_to_image(profile, corner_radius)
 
         # Create rounded corner mask
         mask = Image.new("L", (size, size), 0)
@@ -442,6 +524,52 @@ class StatsCardRenderer:
 
         # Paste onto the main image
         image.paste(profile, (x, y), profile)
+
+    def _apply_hologram_to_image(
+        self,
+        target: Image.Image,
+        corner_radius: int = 0,
+    ) -> None:
+        """Apply tiled hologram pattern as an overlay on a specific image."""
+        if self.hologram_pattern is None:
+            return
+        
+        pattern = self.hologram_pattern
+        target_w, target_h = target.size
+        pattern_w, pattern_h = pattern.size
+        
+        # Create a tiled pattern image that covers the target
+        tiled = Image.new("RGBA", (target_w, target_h), (0, 0, 0, 0))
+        
+        for y in range(0, target_h, pattern_h):
+            for x in range(0, target_w, pattern_w):
+                tiled.paste(pattern, (x, y))
+        
+        # Crop to exact target size
+        tiled = tiled.crop((0, 0, target_w, target_h))
+        
+        # Create rounded corner mask if needed
+        if corner_radius > 0:
+            mask = Image.new("L", (target_w, target_h), 0)
+            mask_draw = ImageDraw.Draw(mask)
+            mask_draw.rounded_rectangle(
+                [0, 0, target_w, target_h],
+                radius=corner_radius,
+                fill=255
+            )
+            tiled.putalpha(Image.composite(
+                tiled.getchannel("A"),
+                Image.new("L", (target_w, target_h), 0),
+                mask
+            ))
+        
+        # Apply configured opacity
+        alpha = tiled.getchannel("A")
+        alpha = alpha.point(lambda p: int(p * self.hologram_opacity))
+        tiled.putalpha(alpha)
+        
+        # Composite onto target
+        target.alpha_composite(tiled)
 
     def _wrap_text_to_width(
         self,

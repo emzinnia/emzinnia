@@ -86,6 +86,11 @@ def main() -> int:
     scale_language_bars = languages_config.get("scale_bars", True)
     language_gradient = languages_config.get("gradient", True)
     language_bar_border = languages_config.get("border", False)
+    
+    hologram_config = config.get("hologram", {})
+    hologram_enabled = hologram_config.get("enabled", True)
+    hologram_opacity = hologram_config.get("opacity", 0.15)
+    hologram_apply_to_profile = hologram_config.get("apply_to_profile", False)
 
     # Format team names for display (handle both string and dict formats)
     def format_pokemon_name(p):
@@ -157,7 +162,12 @@ def main() -> int:
 
     # Render the card
     print("\n[4/4] Rendering stats card...")
-    renderer = StatsCardRenderer(theme)
+    renderer = StatsCardRenderer(
+        theme,
+        hologram_enabled=hologram_enabled,
+        hologram_opacity=hologram_opacity,
+        hologram_apply_to_profile=hologram_apply_to_profile,
+    )
     renderer.render(
         sprites,
         stats,
