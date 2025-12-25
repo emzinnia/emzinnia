@@ -30,7 +30,7 @@ excluded_languages:
   - "HTML"
 
 languages:
-  scale_bars: false
+  scale_bars: true
   gradient: false
   border: true
 
