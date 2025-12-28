@@ -3,12 +3,12 @@ display_name: "EMZINNIA"
 
 pokemon_team:
   - croagunk
-  - scizor
+  - scyther
   - munchlax
-  - diancie-mega
-  - yanmega
+  - yanma
   - name: poochyena
     shiny: true
+  - diancie-mega
 
 theme:
   background: "#1a1b27"
