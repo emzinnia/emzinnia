@@ -28,6 +28,7 @@ excluded_languages:
   - "CSS"
   - "Javascript"
   - "HTML"
+  - "ColdFusion"
 
 languages:
   scale_bars: true

@@ -25,6 +25,47 @@ class GitHubStats:
             "Accept": "application/vnd.github.v3+json",
         }
 
+    def _fetch_repos(self, include_private: bool = False) -> list[dict[str, Any]]:
+        """
+        Fetch repositories for the user.
+
+        If include_private is True, uses the authenticated `/user/repos` endpoint so
+        private owner repos are included (token must belong to the user and have repo scope).
+        """
+        repos: list[dict[str, Any]] = []
+        page = 1
+        per_page = 100
+
+        # `/user/repos` includes private repos for the authenticated user when type=owner.
+        base_url = (
+            f"{self.REST_API_URL}/user/repos"
+            if include_private
+            else f"{self.REST_API_URL}/users/{self.username}/repos"
+        )
+
+        while True:
+            params = {
+                "per_page": per_page,
+                "page": page,
+                "type": "owner",  # owner scope matches prior behavior
+            }
+
+            response = requests.get(base_url, headers=self.headers, params=params, timeout=30)
+            response.raise_for_status()
+            page_repos = response.json()
+
+            if not page_repos:
+                break
+
+            repos.extend(page_repos)
+
+            if len(page_repos) < per_page:
+                break
+
+            page += 1
+
+        return repos
+
     def get_commits_this_year(self) -> int:
         """Get the total number of commits for the current year using GraphQL."""
         current_year = datetime.now().year
@@ -69,33 +110,10 @@ class GitHubStats:
     def get_total_stars(self) -> int:
         """Get the total number of stars across all user repositories."""
         total_stars = 0
-        page = 1
-        per_page = 100
+        repos = self._fetch_repos(include_private=True)
 
-        while True:
-            url = f"{self.REST_API_URL}/users/{self.username}/repos"
-            params = {
-                "per_page": per_page,
-                "page": page,
-                "type": "owner",
-            }
-
-            response = requests.get(
-                url, headers=self.headers, params=params, timeout=30
-            )
-            response.raise_for_status()
-            repos = response.json()
-
-            if not repos:
-                break
-
-            for repo in repos:
-                total_stars += repo.get("stargazers_count", 0)
-
-            if len(repos) < per_page:
-                break
-
-            page += 1
+        for repo in repos:
+            total_stars += repo.get("stargazers_count", 0)
 
         return total_stars
 
@@ -155,34 +173,8 @@ class GitHubStats:
     def get_language_breakdown(self) -> dict[str, int]:
         """Get the breakdown of languages used across all repositories."""
         language_bytes: dict[str, int] = {}
-        page = 1
-        per_page = 100
-
-        # First, get all repositories
-        repos: list[dict[str, Any]] = []
-        while True:
-            url = f"{self.REST_API_URL}/users/{self.username}/repos"
-            params = {
-                "per_page": per_page,
-                "page": page,
-                "type": "owner",
-            }
-
-            response = requests.get(
-                url, headers=self.headers, params=params, timeout=30
-            )
-            response.raise_for_status()
-            page_repos = response.json()
-
-            if not page_repos:
-                break
-
-            repos.extend(page_repos)
-
-            if len(page_repos) < per_page:
-                break
-
-            page += 1
+        # First, get all repositories (including private owner repos)
+        repos = self._fetch_repos(include_private=True)
 
         # Then, get language breakdown for each repository
         for repo in repos:
