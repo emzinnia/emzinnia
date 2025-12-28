@@ -1,7 +1,7 @@
 """GitHub API client for fetching user statistics."""
 
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 import requests
@@ -67,10 +67,10 @@ class GitHubStats:
         return repos
 
     def get_commits_this_year(self) -> int:
-        """Get the total number of commits for the current year using GraphQL."""
-        current_year = datetime.now().year
-        from_date = f"{current_year}-01-01T00:00:00Z"
-        to_date = f"{current_year}-12-31T23:59:59Z"
+        """Get the total number of commits over the last 365 days (rolling window)."""
+        now = datetime.now(datetime.timezone.utc)
+        from_date = (now - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M:%SZ")
+        to_date = now.strftime("%Y-%m-%dT%H:%M:%SZ")
 
         query = """
         query($username: String!, $from: DateTime!, $to: DateTime!) {

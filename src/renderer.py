@@ -915,7 +915,7 @@ class StatsCardRenderer:
             (
                 self._draw_commit_icon,
                 stats.get("total_commits", stats.get("commits_this_year", 0)),
-                "total commits",
+                "commits this year",
                 self.commit_color,
             ),
             (self._draw_pr_icon, stats.get("total_prs", 0), "total PRs", self.pr_color),
