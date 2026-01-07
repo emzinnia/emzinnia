@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -35,4 +37,5 @@ jobs:
           file_pattern: output/stats.png
           commit_user_name: "GitHub Actions Bot"
           commit_user_email: "actions@github.com"
+          commit_author: "GitHub Actions Bot <actions@github.com>"
 
